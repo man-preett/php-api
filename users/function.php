@@ -3,7 +3,7 @@ include('../inc/dbcon.php');
 function getUsers(): bool|string
 {
     global $conn;
-    $query = 'SELECT * FROM users';
+    $query = 'SELECT * FROM em_users';
     $query_run = mysqli_query($conn, $query);
 
     if ($query_run) {
@@ -38,25 +38,28 @@ function storeUser($userInput)
 {
     global $conn;
 
-    $name = mysqli_real_escape_string($conn, $userInput['name']);
-    $email = mysqli_real_escape_string($conn, $userInput['email']);
-    $address = mysqli_real_escape_string($conn, $userInput['address']);
-    $query_email = "SELECT 'email' FROM users WHERE 'email'= '$email'";
+    $firstName = mysqli_real_escape_string($conn, $userInput['user_first_name']);
+    $lastName = mysqli_real_escape_string($conn, $userInput['user_last_name']);
+    $email = mysqli_real_escape_string($conn, $userInput['user_email']);
+    $pass = mysqli_real_escape_string($conn, $userInput['user_password']);
+    $md5_pass = md5($pass);
+    $query_email = "SELECT 'user_email' FROM em_users WHERE 'user_email'= '$email'";
     $result = mysqli_query($conn, $query_email);
-    if (empty(trim($name))) {
-        return error422("Enter your name");
+    if (empty(trim($firstName))) {
+        return error422("Enter your First name");
 
+    } elseif (empty(trim($lastName))) {
+
+        return error422("Enter your Last name");
     } elseif (empty(trim($email))) {
 
         return error422("Enter your email");
-    } 
-    elseif (mysqli_num_rows($result)>0) {
+    } elseif (mysqli_num_rows($result) > 0) {
         return error422("This email is already used");
-    } 
-    elseif (empty(trim($address))) {
-        return error422("Enter your address");
+    } elseif (empty(trim($md5_pass))) {
+        return error422("Enter your password");
     } else {
-        $query = "INSERT INTO users (name,email,address) VALUES ('$name','$email','$address')";
+        $query = "INSERT INTO em_users (user_first_name,user_last_name,user_email,user_password) VALUES ('$firstName','$lastName','$email','$md5_pass')";
         $res = mysqli_query($conn, $query);
         if ($res) {
             $data = [
@@ -88,7 +91,7 @@ function getUser($userParams)
     }
 
     $userId = mysqli_real_escape_string($conn, $userParams['id']);
-    $query = "SELECT * from users WHERE id= '$userId' LIMIT 1";
+    $query = "SELECT * from em_users WHERE user_id= '$userId' LIMIT 1";
     $result = mysqli_query($conn, $query);
     if ($result) {
 
@@ -121,7 +124,7 @@ function getUser($userParams)
 
 }
 
-function updateUser($userInput, $userParams)
+function updateUser($userInput, $userParams): bool|string
 {
     global $conn;
     if (!isset($userParams['id'])) {
@@ -129,12 +132,8 @@ function updateUser($userInput, $userParams)
     } elseif ($userParams['id'] == null) {
         return error422("Enter your user id");
     }
-
-
-
     $userId = mysqli_real_escape_string($conn, $userParams['id']);
-
-    $check_id = "SELECT * FROM users WHERE id = '$userId'";
+    $check_id = "SELECT * FROM em_users WHERE user_id = '$userId'";
     $result = mysqli_query($conn, $check_id);
 
     if (mysqli_num_rows($result) == 0) {
@@ -145,23 +144,25 @@ function updateUser($userInput, $userParams)
         header('HTTP/1.0 404 Method not allowed');
         return json_encode($data);
     }
-    $name = mysqli_real_escape_string($conn, $userInput['name']);
-    $email = mysqli_real_escape_string($conn, $userInput['email']);
-    $address = mysqli_real_escape_string($conn, $userInput['address']);
-    if (empty(trim($name))) {
+    $firstName = mysqli_real_escape_string($conn, $userInput['user_first_name']);
+    $lastName = mysqli_real_escape_string($conn, $userInput['user_last_name']);
+    $email = mysqli_real_escape_string($conn, $userInput['user_email']);
+    $pass = mysqli_real_escape_string($conn, $userInput['user_password']);
+    $md5_pass = md5($pass);
+    if (empty(trim($firstName))) {
         return error422("Enter your name");
 
+    } elseif (empty(trim($lastName))) {
+
+        return error422("Enter your Last name");
     } elseif (empty(trim($email))) {
 
         return error422("Enter your email");
-    } elseif (empty(trim($address))) {
-        return error422("Enter your address");
+    } elseif (empty(trim($md5_pass))) {
+        return error422("Enter your password");
     } else {
 
-        $sql = "UPDATE users SET name='$name',email = '$email',address = '$address' WHERE id = '$userId' LIMIT 1";
-        echo $sql;
-
-
+        $sql = "UPDATE em_users SET user_first_name='$firstName',user_last_name='$lastName',user_email = '$email',user_password = '$md5_pass' WHERE user_id = '$userId' LIMIT 1";
         $res = mysqli_query($conn, $sql);
         if ($res) {
             $data = [
@@ -192,11 +193,11 @@ function deleteUser($userParams)
         return error422("Enter your user id");
     }
 
-    $userId = mysqli_real_escape_string($conn, $userParams['id']);
-    $check_id = "SELECT * FROM users WHERE id = '$userId'";
+    $userId = mysqli_real_escape_string($conn, $userParams['user_id']);
+    $check_id = "SELECT * FROM em_users WHERE user_id = '$userId'";
     $result = mysqli_query($conn, $check_id);
 
-    if (mysqli_num_rows($result)==0) {
+    if (mysqli_num_rows($result) == 0) {
         $data = [
             'status' => 404,
             'message' => 'No user found',
@@ -204,7 +205,7 @@ function deleteUser($userParams)
         header('HTTP/1.0 404 Method not allowed');
         return json_encode($data);
     }
-    $query = "DELETE FROM users WHERE id = '$userId' LIMIT 1";
+    $query = "DELETE FROM em_users WHERE user_id = '$userId' LIMIT 1";
     $res = mysqli_query($conn, $query);
     if ($res) {
         $data = [

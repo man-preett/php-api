@@ -2,7 +2,7 @@
 $host = "localhost";
 $username = "manpreet";
 $pass = "root";
-$dbname = "php_api";
+$dbname = "employ_management";
 
 $conn = mysqli_connect($host, $username, $pass, $dbname);
 if(!$conn){

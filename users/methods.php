@@ -9,6 +9,7 @@ function getMethod($method){
         ];
         header('HTTP/1.0 405 Method not allowed');
         echo json_encode($data);
+        die();
     }
 
 }

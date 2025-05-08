@@ -1,7 +1,11 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 include('../../../cors.php');
 include('../../../methods.php');
 include('../../../inc/dbcon.php');
+// include('../../../verify_token.php');
+
 try {
 
     getMethod('PUT');
@@ -30,7 +34,7 @@ try {
     }
 
     $userId = mysqli_real_escape_string($conn, $_GET['id']);
-    $check_id = "SELECT * FROM em_users WHERE user_id = '$userId'";
+    $check_id = "SELECT * FROM em_users WHERE user_id = '$userId' AND user_isdeleted != '1' ";
     $result = mysqli_query($conn, $check_id);
 
     if (mysqli_num_rows($result) == 0) {
@@ -46,7 +50,12 @@ try {
     }
     $firstName = mysqli_real_escape_string($conn, $userInput['user_first_name']);
     $lastName = mysqli_real_escape_string($conn, $userInput['user_last_name']);
+    $age = mysqli_real_escape_string($conn, $userInput['user_age']);
+    $gender = mysqli_real_escape_string($conn, $userInput['user_gender']);
     $email = mysqli_real_escape_string($conn, $userInput['user_email']);
+    $country = mysqli_real_escape_string($conn, $userInput['user_country']);
+    $state = mysqli_real_escape_string($conn, $userInput['user_state']);
+    $city = mysqli_real_escape_string($conn, $userInput['user_city']);
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $data = [
             "status" => false,
@@ -80,8 +89,9 @@ try {
         echo json_encode($data);
         die();
     }
-    $sql = "UPDATE em_users SET user_first_name='$firstName',user_last_name='$lastName',user_email = '$email' WHERE user_id = '$userId' LIMIT 1";
-    $res = mysqli_query($conn, $sql);
+  
+    $sql = "UPDATE em_users SET user_first_name='$firstName',user_last_name='$lastName',user_age='$age',user_gender='$gender',user_email = '$email',user_country='$country',user_state='$state',user_city='$city' WHERE user_id = '$userId' LIMIT 1";
+    $res = mysqli_query( $conn,$sql);
     if ($res) {
         $data = [
             "status" => true,

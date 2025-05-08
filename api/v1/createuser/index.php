@@ -1,7 +1,10 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 include('../../../cors.php');
 include('../../../inc/dbcon.php');
 include('../../../methods.php');
+// include('../../../verify_token.php');
 
 try {
     getMethod('POST');
@@ -10,7 +13,12 @@ try {
     global $conn;
     $firstName = mysqli_real_escape_string($conn, $userInput['user_first_name']);
     $lastName = mysqli_real_escape_string($conn, $userInput['user_last_name']);
+    $age = mysqli_real_escape_string($conn, $userInput['user_age']);
+    $gender = mysqli_real_escape_string($conn, $userInput['user_gender']);
     $email = mysqli_real_escape_string($conn, $userInput['user_email']);
+    $country = mysqli_real_escape_string($conn, $userInput['user_country']);
+    $state = mysqli_real_escape_string($conn, $userInput['user_state']);
+    $city = mysqli_real_escape_string($conn, $userInput['user_city']);
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $data = [
             "status" => false,
@@ -56,8 +64,8 @@ try {
             http_response_code(400);
             echo json_encode($data);
         } else {
-            $query = "INSERT INTO em_users (user_first_name,user_last_name,user_email,user_password) VALUES ('$firstName','$lastName','$email','$md5_pass')";
-            echo $query;
+            $query = "INSERT INTO em_users (user_first_name,user_last_name,user_age,user_gender,user_email,user_password,user_country,user_state,user_city) VALUES
+                 ('$firstName','$lastName','$age','$gender','$email','$md5_pass','$country','$state','$city')";
             $res = mysqli_query($conn, $query);
             if ($res) {
                 $data = [

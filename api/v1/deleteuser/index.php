@@ -1,9 +1,13 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 include('../../../cors.php');
 include('../../../methods.php');
 include('../../../inc/dbcon.php');
+include('../../../verify_token.php');
+
 try {
-    getMethod('DELETE');
+    getMethod('PUT');
 
 
     global $conn;
@@ -42,7 +46,8 @@ try {
         echo json_encode($data);
         die();
     }
-    $query = "DELETE FROM em_users WHERE user_id = '$userId' LIMIT 1";
+    $query = "Update em_users SET user_isdeleted = '1' WHERE user_id = '$userId'";
+    // $query = "DELETE FROM em_users WHERE user_id = '$userId' LIMIT 1";
     $res = mysqli_query($conn, $query);
     $data = [
         "status" => true,

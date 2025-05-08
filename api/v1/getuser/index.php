@@ -1,7 +1,11 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 include('../../../cors.php');
 include('../../../methods.php');
 include('../../../inc/dbcon.php');
+// include('../../../verify_token.php');
+
 try {
 
     getMethod(method: 'GET');
@@ -18,7 +22,7 @@ try {
     }
 
     $userId = mysqli_real_escape_string($conn, $_GET['id']);
-    $query = "SELECT * from em_users WHERE user_id= '$userId' LIMIT 1";
+    $query = "SELECT * from em_users WHERE user_id= '$userId' AND user_isdeleted != '1' ";
     $result = mysqli_query($conn, $query);
     if ($result) {
 

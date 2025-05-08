@@ -2,34 +2,38 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 include('../../../cors.php');
-include('../../../inc/dbcon.php');
 include('../../../methods.php');
+include('../../../inc/dbcon.php');
 include('../../../verify_token.php');
-
 try {
+    getMethod('GET');
     global $conn;
-    $query = "SELECT * FROM em_users WHERE user_isdeleted != '1' ";
-    $query_run = mysqli_query($conn, $query);
+    $userData;
+    $userId = $userData->id;
+    $query = "SELECT * FROM em_users WHERE user_id = '$userId'";
+    $res = mysqli_query($conn, $query);
+    $result = mysqli_fetch_assoc($res);
+    if (mysqli_num_rows($res) == 0) {
 
-    if (mysqli_num_rows($query_run) > 0) {
-        $res = mysqli_fetch_all($query_run, MYSQLI_ASSOC);
-        $data = [
-            "status" => true,
-            "message" => "Users fetched successfully",
-            "data" => $res
-        ];
-        http_response_code(200);
-        echo json_encode($data);
-    } else {
         $data = [
             "status" => false,
             "message" => "No user found",
             "data" => []
         ];
-        http_response_code(404);
+        http_response_code(200);
         echo json_encode($data);
+        die();
     }
-} catch (Exception $ex) {
+    $data = [
+        "status" => true,
+        "message" => "Data fetched successfully",
+        "data" => $result
+    ];
+    http_response_code(200);
+    echo json_encode($data);
+
+}
+catch (Exception $ex) {
     http_response_code(500);
     $server_response_error = array(
         "status" => false,
@@ -38,5 +42,3 @@ try {
     );
     echo json_encode($server_response_error);
 }
-
-?>

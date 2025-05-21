@@ -4,7 +4,7 @@ ini_set('display_errors', 1);
 include('../../../cors.php');
 include('../../../inc/dbcon.php');
 include('../../../methods.php');
-include('../../../verify_token.php');
+// include('../../../verify_token.php');
 
 try {
     global $conn;

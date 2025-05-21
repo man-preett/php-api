@@ -1,10 +1,10 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+error_reporting(0);
+ini_set('display_errors', 0);
 include('../../../cors.php');
 include('../../../methods.php');
 include('../../../inc/dbcon.php');
-// include('../../../verify_token.php');
+include('../../../verify_token.php');
 
 try {
 
@@ -13,27 +13,10 @@ try {
     $userInput = json_decode(file_get_contents('php://input'), true);
 
     global $conn;
-    if (!isset($_GET['id'])) {
-        $data = [
-            "status" => false,
-            "message" => "id is not found in the url",
-            "data" => []
-        ];
-        http_response_code(400);
-        echo json_encode($data);
-        die();
-    } elseif ($_GET['id'] == null) {
-        $data = [
-            "status" => false,
-            "message" => "Enter your id",
-            "data" => []
-        ];
-        http_response_code(400);
-        echo json_encode($data);
-        die();
-    }
 
-    $userId = mysqli_real_escape_string($conn, $_GET['id']);
+    $userData;
+
+    $userId = $userData->id;
     $check_id = "SELECT * FROM em_users WHERE user_id = '$userId' AND user_isdeleted != '1' ";
     $result = mysqli_query($conn, $check_id);
 
@@ -52,21 +35,11 @@ try {
     $lastName = mysqli_real_escape_string($conn, $userInput['user_last_name']);
     $age = mysqli_real_escape_string($conn, $userInput['user_age']);
     $gender = mysqli_real_escape_string($conn, $userInput['user_gender']);
-    $email = mysqli_real_escape_string($conn, $userInput['user_email']);
     $country = mysqli_real_escape_string($conn, $userInput['user_country']);
     $state = mysqli_real_escape_string($conn, $userInput['user_state']);
     $city = mysqli_real_escape_string($conn, $userInput['user_city']);
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $data = [
-            "status" => false,
-            "message" => "Invalid email format",
-            "data" => []
-        ];
-        http_response_code(400);
-        echo json_encode($data);
-        die();
-    }
-    if (empty($firstName) || empty($lastName) || empty($email)) {
+
+    if (empty($firstName) || empty($lastName)) {
         $data = [
             "status" => false,
             "message" => "Please fill all fields",
@@ -77,26 +50,17 @@ try {
         die();
 
     }
-    $query_email = "SELECT * FROM em_users WHERE user_email= '$email'";
-    $result = mysqli_query($conn, $query_email);
-    if (mysqli_num_rows($result) > 0) {
-        $data = [
-            "status" => false,
-            "message" => "Email is already used",
-            "data" => []
-        ];
-        http_response_code(400);
-        echo json_encode($data);
-        die();
-    }
-  
-    $sql = "UPDATE em_users SET user_first_name='$firstName',user_last_name='$lastName',user_age='$age',user_gender='$gender',user_email = '$email',user_country='$country',user_state='$state',user_city='$city' WHERE user_id = '$userId' LIMIT 1";
+
+    $sql = "UPDATE em_users SET user_first_name='$firstName',user_last_name='$lastName',user_age='$age',user_gender='$gender',user_country='$country',user_state='$state',user_city='$city' WHERE user_id = '$userId' LIMIT 1";
     $res = mysqli_query( $conn,$sql);
-    if ($res) {
+        if ($res) {
+        $selectSql = "SELECT * FROM em_users WHERE user_id = '$userId'";
+        $selectRes = mysqli_query($conn, $selectSql);
+        $result = mysqli_fetch_assoc($selectRes);
         $data = [
             "status" => true,
             "message" => "User updated successfully",
-            "data" => $res
+            "data" => $result
         ];
         http_response_code(200);
         echo json_encode($data);

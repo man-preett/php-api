@@ -1,6 +1,6 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+error_reporting(0);
+ini_set('display_errors', 0);
 include('../../../cors.php');
 include('../../../inc/dbcon.php');
 include('../../../methods.php');
@@ -13,7 +13,7 @@ try {
     $query = "SELECT * FROM em_countries";
     $res = mysqli_query($conn, $query);
     $result = mysqli_fetch_all($res, MYSQLI_ASSOC);
-    if (mysqli_num_rows($res) < 0) {
+    if (mysqli_num_rows($res) <= 0) {
         $data = [
             'status' => false,
             'message' => 'No country Found',

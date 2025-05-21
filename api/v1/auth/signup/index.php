@@ -22,10 +22,10 @@ try {
             die();
         }
         $pass = mysqli_real_escape_string($conn, $userInput['user_password']);
-        if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/', $pass)) {
+        if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{6,}$/', $pass)) {
             $data = [
                 "status" => false,
-                "message" => "Atleast use one lowercase ,one uppercase letter,one digit and minimum lenght of 8 characters",
+                "message" => "Atleast use one lowercase ,one uppercase letter,one digit and minimum lenght of 6 characters",
                 "data" => []
             ];
             http_response_code(400);

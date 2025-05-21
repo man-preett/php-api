@@ -1,23 +1,22 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+error_reporting(0);
+ini_set('display_errors', 0);
+
 include('../../../cors.php');
 include('../../../inc/dbcon.php');
 include('../../../methods.php');
 // include('../../../verify_token.php');
 
 try {
-    getMethod('GET');
+    getMethod('POST');
     global $conn;
     $userInput = json_decode(file_get_contents('php://input'), true);
     $country_name = $userInput['country_name'];
 
-    $query = "SELECT * FROM em_states INNER JOIN   ON em_states.country_id = em_countries.id WHERE country_name = '$country_name'";
-
-
+    $query = "SELECT * FROM em_states INNER JOIN em_countries ON em_states.country_id = em_countries.id WHERE country_name = '$country_name'";
     $res = mysqli_query($conn, $query);
     $result = mysqli_fetch_all($res, MYSQLI_ASSOC);
-    if (mysqli_num_rows($res) < 0) {
+    if (mysqli_num_rows($res) <= 0) {
         $data = [
             'status' => false,
             'message' => 'No State Found',
@@ -28,7 +27,7 @@ try {
         die();
 
     }
-
+    
     $data = [
         'status' => true,
         'message' => 'All States fetched successfully',

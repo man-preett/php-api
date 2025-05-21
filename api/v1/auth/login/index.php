@@ -7,7 +7,7 @@ include('../../../../methods.php');
 include('../../../../inc/dbcon.php');
 
 try{
-    getMethod(method: 'GET');
+    getMethod(method: 'POST');
 
     $userInput = json_decode(file_get_contents('php://input'), true);
         global $conn;

@@ -50,7 +50,7 @@ try {
     $data = [
         "status" => true,
         "message" => "project deleted successfully",
-        "data" => $delectqry
+        "data" => $delectqry        
     ];
     http_response_code(200);
     echo json_encode($data);

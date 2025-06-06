@@ -28,6 +28,9 @@ try {
 
         if (mysqli_num_rows($result) == 1) {
             $res = mysqli_fetch_assoc($result);
+            if (!empty($res['project_type'])) {
+                $res['project_type'] = explode(',', $res['project_type']);
+            }
             $data = [
                 "status" => true,
                 "message" => "Project fetched successfully",

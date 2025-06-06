@@ -42,16 +42,37 @@ try {
     $projectStartDate = mysqli_real_escape_string($conn, $userInput['project_start_date']);
     $projectDeadlineDate = mysqli_real_escape_string($conn, $userInput['project_deadline_date']);
     $projectLead = mysqli_real_escape_string($conn, $userInput['project_lead']);
-    $projectManager = mysqli_real_escape_string($conn, $userInput['project_manager']);
+    $projectManager = mysqli_real_escape_string($conn, string: $userInput['project_manager']);
     $projectClient = mysqli_real_escape_string($conn, $userInput['project_client']);
     $manageTool = mysqli_real_escape_string($conn, $userInput['management_tool']);
     $manageUrl = mysqli_real_escape_string($conn, $userInput['management_url']);
     $repoTool = mysqli_real_escape_string($conn, $userInput['repo_tool']);
     $repoUrl = mysqli_real_escape_string($conn, $userInput['repo_url']);
+    $projectBudget = mysqli_real_escape_string($conn, $userInput['project_budget']);
+    $projectMileStoneDate = mysqli_real_escape_string($conn, $userInput['project_milestone_release_date']);
+    $projectPriority = mysqli_real_escape_string($conn, $userInput['project_priority']);
+    $projectLocation = mysqli_real_escape_string($conn, $userInput['project_location']);
+    $projectApproveStatus = mysqli_real_escape_string($conn, $userInput['project_approval_status']);
+
+
+    $projectTypesRaw = $userInput['project_type'];
+    $projectTypesSanitized = [];
+
+    if (is_array($projectTypesRaw)) {
+        foreach ($projectTypesRaw as $type) {
+            $trimmedType = trim($type);
+            if (!empty($trimmedType)) {
+                $projectTypesSanitized[] = mysqli_real_escape_string($conn, $trimmedType);
+            }
+        }
+    }
+
+    $projectType = implode(',', $projectTypesSanitized);
 
     if (
         empty($projectName) || empty($projectDescription) || empty($projectTech) || empty($projectStatus) || empty($projectStartDate) || empty($projectDeadlineDate) ||
-        empty($projectLead) || empty($projectManager) || empty($projectClient) || empty($manageTool) || empty($manageUrl) || empty($repoTool) || empty($repoUrl)
+        empty($projectLead) || empty($projectManager) || empty($projectClient) || empty($manageTool) || empty($manageUrl) || empty($repoTool) || empty($repoUrl) ||
+        empty($projectBudget) || empty($projectMileStoneDate) || empty($projectPriority) || empty($projectLocation) || empty($projectType) || empty($projectApproveStatus)
     ) {
         $data = [
             "status" => false,
@@ -82,7 +103,7 @@ try {
 
     $sql = "UPDATE em_projects SET project_name='$projectName',project_description='$projectDescription',project_tech='$projectTech',project_status='$projectStatus',
     project_startDate='$projectStartDate',project_deadlineDate='$projectDeadlineDate',project_lead='$projectLead',project_manager='$projectManager',project_client='$projectClient',
-    management_tool='$manageTool',management_url='$manageUrl',repo_tool='$repoTool',repo_url='$repoUrl' WHERE project_id = '$projectId'";
+    management_tool='$manageTool',management_url='$manageUrl',repo_tool='$repoTool',repo_url='$repoUrl',project_budget='$projectBudget',project_milestone_release_date='$projectMileStoneDate',project_priority='$projectPriority',project_location='$projectLocation',project_type='$projectType',project_approval_status='$projectApproveStatus' WHERE project_id = '$projectId'";
     $res1 = mysqli_query($conn, $sql);
        $data = [
             "status" => true,

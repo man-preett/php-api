@@ -26,15 +26,29 @@ try {
     $repoTool = mysqli_real_escape_string($conn, $userInput['repo_tool']);
     $repoUrl = mysqli_real_escape_string($conn, $userInput['repo_url']);
     $projectBudget = mysqli_real_escape_string($conn, $userInput['project_budget']);
+    $projectMileStoneDate= mysqli_real_escape_string($conn, $userInput['project_milestone_release_date']);
     $projectPriority = mysqli_real_escape_string($conn, $userInput['project_priority']);
     $projectLocation = mysqli_real_escape_string($conn, $userInput['project_location']);
-    $projectType = mysqli_real_escape_string($conn, $userInput['project_type']);
     $projectApproveStatus = mysqli_real_escape_string($conn, $userInput['project_approval_status']);
+
+    $projectTypesRaw = $userInput['project_type'];
+    $projectTypesSanitized = [];
+
+    if (is_array($projectTypesRaw)) {
+        foreach ($projectTypesRaw as $type) {
+            $trimmedType = trim($type);
+            if (!empty($trimmedType)) {
+                $projectTypesSanitized[] = mysqli_real_escape_string($conn, $trimmedType);
+            }
+        }
+    }
+
+    $projectType = implode(',', $projectTypesSanitized);
 
     if (
         empty($projectName) || empty($projectDescription) || empty($projectTech) || empty($projectStatus) || empty($projectStartDate) || empty($projectDeadlineDate) ||
         empty($projectLead) || empty($projectManager) || empty($projectClient) || empty($manageTool) || empty($manageUrl) || empty($repoTool) || empty($repoUrl) ||
-        empty($projectBudget) || empty($projectPriority) || empty($projectLocation) || empty($projectType) || empty($projectApproveStatus)
+        empty($projectBudget) || empty($projectMileStoneDate) || empty($projectPriority) || empty($projectLocation) || empty($projectType) || empty($projectApproveStatus)
     ) {
         $data = [
             "status" => false,
@@ -45,8 +59,8 @@ try {
         echo json_encode($data);
         die();
     }
-    $query = "INSERT INTO em_projects (project_user_id, project_name, project_description, project_tech, project_status, project_startDate, project_deadlineDate, project_lead, project_manager, project_client, management_tool, management_url, repo_tool, repo_url, project_budget, project_priority, project_location, project_type, project_approval_status) VALUES
-             ('$userId','$projectName','$projectDescription','$projectTech','$projectStatus','$projectStartDate','$projectDeadlineDate','$projectLead','$projectManager','$projectClient','$manageTool','$manageUrl','$repoTool','$repoUrl','$projectBudget','$projectPriority','$projectLocation','$projectType','$projectApproveStatus')";
+    $query = "INSERT INTO em_projects (project_user_id, project_name, project_description, project_tech, project_status, project_startDate, project_deadlineDate, project_lead, project_manager, project_client, management_tool, management_url, repo_tool, repo_url, project_budget,project_milestone_release_date, project_priority, project_location, project_type, project_approval_status) VALUES
+             ('$userId','$projectName','$projectDescription','$projectTech','$projectStatus','$projectStartDate','$projectDeadlineDate','$projectLead','$projectManager','$projectClient','$manageTool','$manageUrl','$repoTool','$repoUrl','$projectBudget','$projectMileStoneDate','$projectPriority','$projectLocation','$projectType','$projectApproveStatus')";
 
     $res = mysqli_query($conn, $query);
     if ($res) {

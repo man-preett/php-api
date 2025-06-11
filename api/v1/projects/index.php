@@ -14,9 +14,9 @@ try {
     $userId = $userData->id;
 
     // Pagination
-    $startRow = isset($_GET['startRow']) ? (int) $_GET['startRow'] : 0;
-    $endRow = isset($_GET['endRow']) ? (int) $_GET['endRow'] : 50;
-    $limit = $endRow - $startRow;
+    $offset = isset($_GET['offset']) ? (int) $_GET['offset'] : 0;
+    $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 100;
+    $limits = $limit - $startRow;
 
     $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, $_GET['search']) : '';
     $sortQuery = '';
@@ -77,8 +77,10 @@ try {
             project_approval_status LIKE '%$search%'
         )";
     }
+    if (empty($sortQuery)) {
+        $sortQuery = " ORDER BY project_created_at DESC";
+    }
 
-    // 🔧 Filter logic (with AND/OR compound support)
     function buildFilterCondition($column, $filter, $conn)
     {
         $value = mysqli_real_escape_string($conn, $filter['filter']);
@@ -113,7 +115,6 @@ try {
         if (is_array($filterModel)) {
             foreach ($filterModel as $column => $filter) {
                 if (isset($filter['operator']) && isset($filter['conditions']) && is_array($filter['conditions'])) {
-                    // Compound filter
                     $op = strtoupper($filter['operator']) === 'OR' ? 'OR' : 'AND';
                     $conditions = [];
                     foreach ($filter['conditions'] as $cond) {
@@ -123,31 +124,41 @@ try {
                         $filterQuery .= " AND (" . implode(" $op ", $conditions) . ")";
                     }
                 } else {
-                    // Simple filter
                     $filterQuery .= " AND " . buildFilterCondition($column, $filter, $conn);
                 }
             }
         }
     }
+    
+   if($limit>1000){
+    $data = [
+        "status" => false,
+        "message" => "Too many records.",
+        "data" => [],
+    ];
+
+    http_response_code(400);
+    echo json_encode($data);
+        die();
+   }
 
     $query = "SELECT SQL_CALC_FOUND_ROWS * FROM em_projects 
           WHERE project_user_id = '$userId' 
           $searchQuery 
           $filterQuery 
           $sortQuery 
-          LIMIT $startRow, $limit";
-
+          LIMIT $offset, $limits " ;
     $res = mysqli_query($conn, $query);
     $rows = mysqli_fetch_all($res, MYSQLI_ASSOC);
-
-    $totalRes = mysqli_query($conn, "SELECT FOUND_ROWS() as total");
+        $totalRes = mysqli_query($conn, "SELECT FOUND_ROWS() as total");
     $total = mysqli_fetch_assoc($totalRes)['total'];
+
 
     $data = [
         "status" => true,
         "message" => "Projects fetched successfully",
-        "rows" => $rows,
-        "lastRow" => (int) $total
+        "data" => $rows,
+        "total" => (int) $total
     ];
 
     http_response_code(200);
@@ -157,8 +168,8 @@ try {
     echo json_encode([
         "status" => false,
         "message" => $ex->getMessage(),
-        "rows" => [],
-        "lastRow" => 0
+        "data" => [],
+        "total" => 0
     ]);
 }
 ?>

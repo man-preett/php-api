@@ -67,11 +67,12 @@ try {
             $query = "INSERT INTO em_users (user_first_name,user_last_name,user_age,user_gender,user_email,user_password,user_country,user_state,user_city) VALUES
                  ('$firstName','$lastName','$age','$gender','$email','$md5_pass','$country','$state','$city')";
             $res = mysqli_query($conn, $query);
+            $result = mysqli_fetch_array($res);
             if ($res) {
                 $data = [
                     "status" => true,
                     "message" => "User created successfully",
-                    "data" => $res
+                    "data" => $result
                 ];
                 http_response_code(200);
                 echo json_encode($data);

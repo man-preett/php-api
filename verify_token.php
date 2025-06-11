@@ -46,7 +46,7 @@ function validateToken($token){
              'message' =>"Unauthorization",
              'data' =>[]
         ];
-        http_response_code(500);
+        http_response_code(401);
         echo json_encode($response);
         return false;
     }

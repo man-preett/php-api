@@ -1,6 +1,6 @@
 <?php
 error_reporting(E_ALL);
-ini_set('display_errors', 0);
+ini_set('display_errors', 1);
 include('../../../cors.php');
 include('../../../methods.php');
 include('../../../inc/dbcon.php');
@@ -9,7 +9,8 @@ include('../../../verify_token.php');
 try {
 
     getMethod(method: 'GET');
-    global $conn;
+    global $db;
+    $collection = $db->em_projects;
     if ($_GET['id'] == null) {
         $data = [
             "status" => false,
@@ -21,20 +22,22 @@ try {
         die();
     }
 
-    $projectId = mysqli_real_escape_string($conn, $_GET['id']);
-    $query = "SELECT * from em_projects WHERE project_id= '$projectId'";
-    $result = mysqli_query($conn, $query);
-    if ($result) {
+    $projectId = $_GET['id'];
+    $projectObjectId = new MongoDB\BSON\ObjectId($projectId);
+    $query = $collection->findOne([
+        '_id' => $projectObjectId
+    ]);
 
-        if (mysqli_num_rows($result) == 1) {
-            $res = mysqli_fetch_assoc($result);
-            if (!empty($res['project_type'])) {
-                $res['project_type'] = explode(',', $res['project_type']);
+    if ($query) {
+
+        if ($query) {
+            if (!empty($query['project_type'])) {
+                $query['project_type'] = explode(',', $query['project_type']);
             }
             $data = [
                 "status" => true,
                 "message" => "Project fetched successfully",
-                "data" => $res
+                "data" => $query
             ];
             http_response_code(200);
             echo json_encode($data);

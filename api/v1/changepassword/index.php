@@ -5,63 +5,77 @@ include('../../../cors.php');
 include('../../../methods.php');
 include('../../../inc/dbcon.php');
 include('../../../verify_token.php');
-try {
 
+try {
     getMethod('POST');
-    global $conn;
+    global $db;
+
     $userData;
-    $userId = $userData->id;
+    $userId = $userData->id; 
+
+    $userObjectId = new MongoDB\BSON\ObjectId($userId);
+
     $userInput = json_decode(file_get_contents('php://input'), true);
     $current_password = $userInput['current_password'];
     $new_password = $userInput['new_password'];
+
     $md5currentPass = md5($current_password);
     $md5newPass = md5($new_password);
 
-    $current_pass_query = "SELECT user_password from em_users WHERE user_id = '$userId'";
-    $qres = mysqli_query($conn, $current_pass_query);
-    $row = mysqli_fetch_array(result: $qres);
-    $db_current = $row['user_password'];
+    $collection = $db->em_users;
 
+    $userDoc = $collection->findOne([
+        '_id' => $userObjectId
+    ]);
 
-    if ($db_current !== $md5currentPass) {
-        $data = [
+    if (!$userDoc) {
+        http_response_code(404);
+        echo json_encode([
             "status" => false,
-            "message" => "Old and new password does not match",
+            "message" => "User not found",
             "data" => []
-        ];
+        ]);
+        die();
+    }
+
+    $db_current = $userDoc['user_password'];
+    if ($db_current !== $md5currentPass) {
         http_response_code(400);
-        echo json_encode($data);
+        echo json_encode([
+            "status" => false,
+            "message" => "Old password is incorrect",
+            "data" => []
+        ]);
         die();
     }
 
     if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{6,}$/', $new_password)) {
-        $data = [
-            "status" => false,
-            "message" => "Atleast use one lowercase ,one uppercase letter,one digit and minimum lenght of 6 characters",
-            "data" => []
-        ];
         http_response_code(400);
-        echo json_encode($data);
+        echo json_encode([
+            "status" => false,
+            "message" => "New password must contain at least one lowercase, one uppercase, one digit, one special character and be at least 6 characters long",
+            "data" => []
+        ]);
         die();
     }
-    $query = "UPDATE em_users SET user_password='$md5newPass' WHERE user_id ='$userId'";
-    $res = mysqli_query($conn, $query);
-    $data = [
+
+    $updateResult = $collection->updateOne(
+        ['_id' => $userObjectId],
+        ['$set' => ['user_password' => $md5newPass]]
+    );
+
+    echo json_encode([
         'status' => true,
         'message' => 'Password changed successfully',
         'data' => []
-    ];
+    ]);
     http_response_code(200);
-    echo json_encode($data);
-
-
 
 } catch (Exception $ex) {
     http_response_code(500);
-    $server_response_error = array(
+    echo json_encode([
         "status" => false,
         "message" => $ex->getMessage(),
         "data" => []
-    );
-    echo json_encode($server_response_error);
+    ]);
 }

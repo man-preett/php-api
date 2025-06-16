@@ -4,20 +4,30 @@ ini_set('display_errors', 0);
 include('../../../cors.php');
 include('../../../inc/dbcon.php');
 include('../../../methods.php');
-// include('../../../verify_token.php');
+include('../../../verify_token.php');
 
 try {
     getMethod('POST');
-    global $conn;
+    global $db;
+    $collection = $db->em_cities;
     $userInput = json_decode(file_get_contents('php://input'), true);
     $state_name = $userInput['state_name'];
 
-    $query = "SELECT * FROM em_cities INNER JOIN em_states ON em_cities.state_id = em_states.id WHERE state_name = '$state_name'";
+    $query = $collection->aggregate(pipeline: [
+        [
+            '$lookup' => [
+                'from' => "em_states",
+                'localField' => "state_id",
+                'foreignField' => "_id",
+                "as" => "state"
+            ]
+        ],
+        ['$unwind' => '$state'],
+        ['$match' => ['state.state_name' => $state_name]]
+    ])->toArray();
 
 
-    $res = mysqli_query($conn, $query);
-    $result = mysqli_fetch_all($res, MYSQLI_ASSOC);
-    if (mysqli_num_rows($res) <= 0) {
+    if (empty($query)) {
         $data = [
             'status' => false,
             'message' => 'No City Found',
@@ -32,7 +42,7 @@ try {
     $data = [
         'status' => true,
         'message' => 'All cities fetched successfully',
-        'data' => $result
+        'data' => $query
     ];
     http_response_code(200);
     echo json_encode($data);

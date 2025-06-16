@@ -6,66 +6,70 @@ include('../../../methods.php');
 include('../../../inc/dbcon.php');
 include('../../../verify_token.php');
 
+use MongoDB\BSON\ObjectId;
+
 try {
     getMethod('PUT');
 
+    global $db;
 
-    global $conn;
     if (!isset($_GET['id'])) {
-        $data = [
+        echo json_encode([
             "status" => false,
-            "message" => "id is not found in the url",
+            "message" => "ID is not found in the URL",
             "data" => []
-        ];
+        ]);
         http_response_code(400);
-        echo json_encode($data);
-        die();
-    } elseif ($_GET['id'] == null) {
-        $data = [
-            "status" => false,
-            "message" => "Enter your id",
-            "data" => []
-        ];
-        http_response_code(400);
-        echo json_encode($data);
-        die();
+        exit;
     }
 
-    $userId = mysqli_real_escape_string($conn, $_GET['id']);
+    $userId = $_GET['id'];
 
-    $check_id = "SELECT * FROM em_users WHERE user_id = '$userId'";
-    $result = mysqli_query($conn, $check_id);
+    if (!preg_match('/^[a-f\d]{24}$/i', $userId)) {
+        echo json_encode([
+            "status" => false,
+            "message" => "Invalid ObjectId",
+            "data" => []
+        ]);
+        http_response_code(400);
+        exit;
+    }
 
-    if (mysqli_num_rows($result) == 0) {
-        $data = [
+    $objectId = new ObjectId($userId);
+    $collection = $db->em_users;
+
+    $user = $collection->findOne(['_id' => $objectId]);
+
+    if (!$user) {
+        echo json_encode([
             "status" => false,
             "message" => "No user found",
             "data" => []
-        ];
+        ]);
         http_response_code(404);
-        echo json_encode($data);
-        die();
+        exit;
     }
-    $query = "Update em_users SET user_isdeleted = '1' WHERE user_id = '$userId'";
-    // $query = "DELETE FROM em_users WHERE user_id = '$userId' LIMIT 1";
-    $res = mysqli_query($conn, $query);
-    $data = [
+
+    $update = $collection->updateOne(
+        ['_id' => $objectId],
+        ['$set' => ['user_isdeleted' => '1']]
+    );
+
+    echo json_encode([
         "status" => true,
         "message" => "User deleted successfully",
-        "data" => $res
-    ];
+        "data" => [
+            "modifiedCount" => $update->getModifiedCount()
+        ]
+    ]);
     http_response_code(200);
-    echo json_encode($data);
+
 } catch (Exception $ex) {
     http_response_code(500);
-    $server_response_error = array(
+    echo json_encode([
         "status" => false,
         "message" => $ex->getMessage(),
         "data" => []
-    );
-    echo json_encode($server_response_error);
+    ]);
 }
-
-
-
 ?>

@@ -1,0 +1,7 @@
+{
+  "intelephense.environment.includePaths": [
+    "./vendor/mongodb/mongodb/src",
+    "./vendor/mongodb/mongodb/lib",
+    "./vendor/mongodb/mongodb"
+  ]
+}

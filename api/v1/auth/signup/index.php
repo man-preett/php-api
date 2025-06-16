@@ -1,4 +1,5 @@
 <?php
+
 include('../../../../cors.php');
 include('../../../../methods.php');
 include('../../../../inc/dbcon.php');
@@ -6,11 +7,12 @@ include('../../../../inc/dbcon.php');
 try {
     getMethod('POST');
     $userInput = json_decode(file_get_contents('php://input'), true); {
-        global $conn;
+        global $db;
+        // echo "Using DB: " . $db->getDatabaseName();
 
-        $firstName = mysqli_real_escape_string($conn, $userInput['user_first_name']);
-        $lastName = mysqli_real_escape_string($conn, $userInput['user_last_name']);
-        $email = mysqli_real_escape_string($conn, $userInput['user_email']);
+        $firstName = $userInput['user_first_name'];
+        $lastName = $userInput['user_last_name'];
+        $email = $userInput['user_email'];
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $data = [
                     "status" => false,
@@ -21,7 +23,7 @@ try {
                 echo json_encode($data);
             die();
         }
-        $pass = mysqli_real_escape_string($conn, $userInput['user_password']);
+        $pass = $userInput['user_password'];
         if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{6,}$/', $pass)) {
             $data = [
                 "status" => false,
@@ -33,6 +35,7 @@ try {
             die();
         }
         $md5_pass = md5($pass);
+        $collection = $db->em_users;
 
         if (empty($firstName) || empty($lastName) || empty($email) || empty($pass)) {
             $data = [
@@ -44,9 +47,8 @@ try {
             echo json_encode($data);
 
         } else {
-            $query_email = "SELECT * FROM em_users WHERE user_email= '$email'";
-            $result = mysqli_query($conn, $query_email);
-            if (mysqli_num_rows($result) > 0) {
+            $query_email = $collection->findOne(['user_email' => $email]);
+            if ($query_email) {
                 $data = [
                     "status" => false,
                     "message" => "Email is already used",
@@ -55,13 +57,25 @@ try {
                 http_response_code(400);
                 echo json_encode($data);
             } else {
-                $query = "INSERT INTO em_users (user_first_name,user_last_name,user_email,user_password) VALUES ('$firstName','$lastName','$email','$md5_pass')";
-                $res = mysqli_query($conn, $query);
-                if ($res) {
-                        $data = [
+                $query = $collection->insertOne([
+                    'user_first_name' => $firstName,
+                    'user_last_name' => $lastName,
+                    'user_email' => $email,
+                    'user_password' => $md5_pass
+                ]);
+
+                if ($query) {
+                    $userData = [
+                        "_id" => (string) $query->getInsertedId(),
+                        "user_first_name" => $firstName,
+                        "user_last_name" => $lastName,
+                        "user_email" => $email
+                    ];
+
+                    $data = [
                         "status" => true,
                         "message" => "User created successfully",
-                        "data" => $user_data
+                        "data" => $userData
                     ];
                     http_response_code(200);
                     echo json_encode($data);

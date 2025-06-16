@@ -4,19 +4,21 @@ ini_set('display_errors', 1);
 include('../../../cors.php');
 include('../../../inc/dbcon.php');
 include('../../../methods.php');
-// include('../../../verify_token.php');
+include('../../../verify_token.php');
 
 try {
-    global $conn;
-    $query = "SELECT * FROM em_users WHERE user_isdeleted != '1' ";
-    $query_run = mysqli_query($conn, $query);
-
-    if (mysqli_num_rows($query_run) > 0) {
-        $res = mysqli_fetch_all($query_run, MYSQLI_ASSOC);
+    getMethod(method: 'GET');
+    global $db;
+    $collection = $db->em_users;
+    $cursor = $collection->find([
+        'user_isdeleted' => ['$ne' => '1']
+    ]);
+    $query = iterator_to_array($cursor);
+    if ($query) {
         $data = [
             "status" => true,
             "message" => "Users fetched successfully",
-            "data" => $res
+            "data" => $query
         ];
         http_response_code(200);
         echo json_encode($data);

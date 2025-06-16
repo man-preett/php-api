@@ -6,30 +6,49 @@ include('../../../cors.php');
 include('../../../inc/dbcon.php');
 include('../../../methods.php');
 include('../../../verify_token.php');
+
 try {
     getMethod('POST');
-    $userData;
+    global $db;
+    $collection = $db->em_projects;
     $userId = $userData->id;
+    $userObjectId = new MongoDB\BSON\ObjectId($userId);
+
     $userInput = json_decode(file_get_contents('php://input'), true);
-    global $conn;
-    $projectName = mysqli_real_escape_string($conn, $userInput['project_name']);
-    $projectDescription = mysqli_real_escape_string($conn, $userInput['project_description']);
-    $projectTech = mysqli_real_escape_string($conn, $userInput['project_tech']);
-    $projectStatus = mysqli_real_escape_string($conn, $userInput['project_status']);
-    $projectStartDate = mysqli_real_escape_string($conn, $userInput['project_start_date']);
-    $projectDeadlineDate = mysqli_real_escape_string($conn, $userInput['project_deadline_date']);
-    $projectLead = mysqli_real_escape_string($conn, $userInput['project_lead']);
-    $projectManager = mysqli_real_escape_string($conn, $userInput['project_manager']);
-    $projectClient = mysqli_real_escape_string($conn, $userInput['project_client']);
-    $manageTool = mysqli_real_escape_string($conn, $userInput['management_tool']);
-    $manageUrl = mysqli_real_escape_string($conn, $userInput['management_url']);
-    $repoTool = mysqli_real_escape_string($conn, $userInput['repo_tool']);
-    $repoUrl = mysqli_real_escape_string($conn, $userInput['repo_url']);
-    $projectBudget = mysqli_real_escape_string($conn, $userInput['project_budget']);
-    $projectMileStoneDate= mysqli_real_escape_string($conn, $userInput['project_milestone_release_date']);
-    $projectPriority = mysqli_real_escape_string($conn, $userInput['project_priority']);
-    $projectLocation = mysqli_real_escape_string($conn, $userInput['project_location']);
-    $projectApproveStatus = mysqli_real_escape_string($conn, $userInput['project_approval_status']);
+
+    $requiredFields = [
+        'project_name',
+        'project_description',
+        'project_tech',
+        'project_status',
+        'project_start_date',
+        'project_deadline_date',
+        'project_lead',
+        'project_manager',
+        'project_client',
+        'management_tool',
+        'management_url',
+        'repo_tool',
+        'repo_url',
+        'project_budget',
+        'project_milestone_release_date',
+        'project_priority',
+        'project_location',
+        'project_type',
+        '   '
+    ];
+
+    foreach ($requiredFields as $field) {
+        if (empty($userInput[$field])) {
+            http_response_code(400);
+            echo json_encode([
+                "status" => false,
+                "message" => "Please fill all fields",
+                "data" => []
+            ]);
+            exit;
+        }
+    }
 
     $projectTypesRaw = $userInput['project_type'];
     $projectTypesSanitized = [];
@@ -38,49 +57,56 @@ try {
         foreach ($projectTypesRaw as $type) {
             $trimmedType = trim($type);
             if (!empty($trimmedType)) {
-                $projectTypesSanitized[] = mysqli_real_escape_string($conn, $trimmedType);
+                $projectTypesSanitized[] = $trimmedType;
             }
         }
     }
 
     $projectType = implode(',', $projectTypesSanitized);
 
-    if (
-        empty($projectName) || empty($projectDescription) || empty($projectTech) || empty($projectStatus) || empty($projectStartDate) || empty($projectDeadlineDate) ||
-        empty($projectLead) || empty($projectManager) || empty($projectClient) || empty($manageTool) || empty($manageUrl) || empty($repoTool) || empty($repoUrl) ||
-        empty($projectBudget) || empty($projectMileStoneDate) || empty($projectPriority) || empty($projectLocation) || empty($projectType) || empty($projectApproveStatus)
-    ) {
-        $data = [
-            "status" => false,
-            "message" => "Please fill all fields",
-            "data" => []
-        ];
-        http_response_code(400);
-        echo json_encode($data);
-        die();
-    }
-    $query = "INSERT INTO em_projects (project_user_id, project_name, project_description, project_tech, project_status, project_startDate, project_deadlineDate, project_lead, project_manager, project_client, management_tool, management_url, repo_tool, repo_url, project_budget,project_milestone_release_date, project_priority, project_location, project_type, project_approval_status) VALUES
-             ('$userId','$projectName','$projectDescription','$projectTech','$projectStatus','$projectStartDate','$projectDeadlineDate','$projectLead','$projectManager','$projectClient','$manageTool','$manageUrl','$repoTool','$repoUrl','$projectBudget','$projectMileStoneDate','$projectPriority','$projectLocation','$projectType','$projectApproveStatus')";
+    $projectDocument = [
+        'project_user_id' => $userObjectId,
+        'project_name' => $userInput['project_name'],
+        'project_description' => $userInput['project_description'],
+        'project_tech' => $userInput['project_tech'],
+        'project_status' => $userInput['project_status'],
+        'project_startDate' => $userInput['project_start_date'],
+        'project_deadlineDate' => $userInput['project_deadline_date'],
+        'project_lead' => $userInput['project_lead'],
+        'project_manager' => $userInput['project_manager'],
+        'project_client' => $userInput['project_client'],
+        'management_tool' => $userInput['management_tool'],
+        'management_url' => $userInput['management_url'],
+        'repo_tool' => $userInput['repo_tool'],
+        'repo_url' => $userInput['repo_url'],
+        'project_budget' => $userInput['project_budget'],
+        'project_milestone_release_date' => $userInput['project_milestone_release_date'],
+        'project_priority' => $userInput['project_priority'],
+        'project_location' => $userInput['project_location'],
+        'project_type' => $projectType,
+        'project_approval_status' => $userInput['project_approval_status'],
+        'created_at' => new MongoDB\BSON\UTCDateTime()
+    ];
 
-    $res = mysqli_query($conn, $query);
-    if ($res) {
-        $data = [
+    $insertResult = $collection->insertOne($projectDocument);
+
+    if ($insertResult->getInsertedCount() > 0) {
+        echo json_encode([
             "status" => true,
             "message" => "Project created successfully",
-            "data" => $res
-        ];
+            "data" => ['inserted_id' => (string) $insertResult->getInsertedId()]
+        ]);
         http_response_code(200);
-        echo json_encode($data);
+    } else {
+        throw new Exception("Project insertion failed");
     }
 
 } catch (Exception $ex) {
     http_response_code(500);
-    $server_response_error = array(
+    echo json_encode([
         "status" => false,
         "message" => $ex->getMessage(),
         "data" => []
-    );
-    echo json_encode($server_response_error);
+    ]);
 }
-
 ?>

@@ -4,21 +4,20 @@ ini_set('display_errors', 1);
 include('../../../cors.php');
 include('../../../inc/dbcon.php');
 include('../../../methods.php');
-// include('../../../verify_token.php');
 
 try {
     getMethod('POST');
 
     $userInput = json_decode(file_get_contents('php://input'), true);
-    global $conn;
-    $firstName = mysqli_real_escape_string($conn, $userInput['user_first_name']);
-    $lastName = mysqli_real_escape_string($conn, $userInput['user_last_name']);
-    $age = mysqli_real_escape_string($conn, $userInput['user_age']);
-    $gender = mysqli_real_escape_string($conn, $userInput['user_gender']);
-    $email = mysqli_real_escape_string($conn, $userInput['user_email']);
-    $country = mysqli_real_escape_string($conn, $userInput['user_country']);
-    $state = mysqli_real_escape_string($conn, $userInput['user_state']);
-    $city = mysqli_real_escape_string($conn, $userInput['user_city']);
+    global $db;
+    $firstName = $userInput['user_first_name'];
+    $lastName = $userInput['user_last_name'];
+    $age = $userInput['user_age'];
+    $gender = $userInput['user_gender'];
+    $email = $userInput['user_email'];
+    $country = $userInput['user_country'];
+    $state = $userInput['user_state'];
+    $city = $userInput['user_city'];
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $data = [
             "status" => false,
@@ -29,7 +28,7 @@ try {
         echo json_encode($data);
         die();
     }
-    $pass = mysqli_real_escape_string($conn, $userInput['user_password']);
+    $pass = $userInput['user_password'];
     if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/', $pass)) {
         $data = [
             "status" => false,
@@ -41,9 +40,10 @@ try {
         die();
     }
     $md5_pass = md5($pass);
-    $query_email = "SELECT 'user_email' FROM em_users WHERE 'user_email'= '$email'";
-    $result = mysqli_query($conn, $query_email);
-    if (empty($firstName) || empty($lastName) || empty($email) || empty($pass)) {
+    $collection = $db->em_users;
+    $query_email = $collection->findOne(['user_email' => $email]);
+
+    if (empty($firstName) || empty($lastName) || empty($email) || empty($pass) || empty($age)|| empty($gender) || empty($country) || empty($state) || empty($city)) {
         $data = [
             "status" => false,
             "message" => "Please fill all fields",
@@ -53,9 +53,8 @@ try {
         echo json_encode($data);
 
     } else {
-        $query_email = "SELECT * FROM em_users WHERE user_email= '$email'";
-        $result = mysqli_query($conn, $query_email);
-        if (mysqli_num_rows($result) > 0) {
+
+        if ($query_email) {
             $data = [
                 "status" => false,
                 "message" => "Email is already used",
@@ -64,15 +63,22 @@ try {
             http_response_code(400);
             echo json_encode($data);
         } else {
-            $query = "INSERT INTO em_users (user_first_name,user_last_name,user_age,user_gender,user_email,user_password,user_country,user_state,user_city) VALUES
-                 ('$firstName','$lastName','$age','$gender','$email','$md5_pass','$country','$state','$city')";
-            $res = mysqli_query($conn, $query);
-            $result = mysqli_fetch_array($res);
-            if ($res) {
+            $user = $collection->insertOne([
+                'user_first_name' => $firstName,
+                'user_last_name' => $lastName,
+                'user_age' => $age,
+                'user_gender' => $gender,
+                'user_email' => $email,
+                'user_password' => $md5_pass,
+                'user_country' => $country,
+                'user_state' => $state,
+                'user_city' => $city
+            ]);
+            if ($user) {
                 $data = [
                     "status" => true,
                     "message" => "User created successfully",
-                    "data" => $result
+                    "data" => (string) $user->getInsertedId()
                 ];
                 http_response_code(200);
                 echo json_encode($data);

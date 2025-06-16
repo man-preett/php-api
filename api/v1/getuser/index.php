@@ -1,16 +1,17 @@
 <?php
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+
 include('../../../cors.php');
 include('../../../methods.php');
 include('../../../inc/dbcon.php');
-// include('../../../verify_token.php');
+include('../../../verify_token.php');
 
 try {
-
     getMethod(method: 'GET');
-    global $conn;
-    if ($_GET['id'] == null) {
+    global $db;
+
+    if (empty($_GET['id'])) {
         $data = [
             "status" => false,
             "message" => "Enter your id",
@@ -18,46 +19,53 @@ try {
         ];
         http_response_code(400);
         echo json_encode($data);
-        die();
+        exit;
     }
 
-    $userId = mysqli_real_escape_string($conn, $_GET['id']);
-    $query = "SELECT * from em_users WHERE user_id= '$userId' AND user_isdeleted != '1' ";
-    $result = mysqli_query($conn, $query);
-    if ($result) {
+    $userId = $_GET['id'];
+    $collection = $db->em_users;
 
-        if (mysqli_num_rows($result) == 1) {
-            $res = mysqli_fetch_assoc($result);
-            $data = [
-                "status" => true,
-                "message" => "User fetched successfully",
-                "data" => $res
-            ];
-            http_response_code(200);
-            echo json_encode($data);
+    try {
+        $userObjectId = new MongoDB\BSON\ObjectId($userId);
+    } catch (Exception $e) {
+        http_response_code(400);
+        echo json_encode([
+            "status" => false,
+            "message" => "Invalid user ID format",
+            "data" => []
+        ]);
+        exit;
+    }
 
-        } else {
-            $data = [
-                "status" => false,
-                "message" => "No user found",
-                "data" => []
-            ];
-            http_response_code(404);
-            echo json_encode($data);
+    $user = $collection->findOne([
+        '_id' => $userObjectId,
+        'user_isdeleted' => ['$ne' => '1']
+    ]);
 
-        }
-
+    if ($user) {
+        $data = [
+            "status" => true,
+            "message" => "User fetched successfully",
+            "data" => $user
+        ];
+        http_response_code(200);
+        echo json_encode($data);
+    } else {
+        $data = [
+            "status" => false,
+            "message" => "No user found",
+            "data" => []
+        ];
+        http_response_code(404);
+        echo json_encode($data);
     }
 
 } catch (Exception $ex) {
     http_response_code(500);
-    $server_response_error = array(
+    echo json_encode([
         "status" => false,
         "message" => $ex->getMessage(),
         "data" => []
-    );
-    echo json_encode($server_response_error);
+    ]);
 }
-
-
 ?>

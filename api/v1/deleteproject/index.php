@@ -9,7 +9,8 @@ include('../../../verify_token.php');
 
 try {
     getMethod('DELETE');
-    global $conn;
+    global $db;
+    $collection = $db->em_projects;
     if (!isset($_GET['id'])) {
         $data = [
             "status" => false,
@@ -30,12 +31,16 @@ try {
         die();
     }
 
-    $projectId = mysqli_real_escape_string($conn, $_GET['id']);
+    $projectId = $_GET['id'];
+    $projectObjectId = new MongoDB\BSON\ObjectId($projectId);
 
-    $check_id = "SELECT * FROM em_projects WHERE project_id = '$projectId'";
-    $result = mysqli_query($conn, $check_id);
-    $delectqry = mysqli_fetch_assoc($result);
-    if (mysqli_num_rows($result) == 0) {
+
+    $check_id = $collection->findOne([
+        "_id" => $projectObjectId
+    ]);
+
+
+    if (count($check_id) == 0) {
         $data = [
             "status" => false,
             "message" => "No project found",
@@ -45,12 +50,14 @@ try {
         echo json_encode($data);
         die();
     }
-    $query = "DELETE FROM em_projects WHERE project_id = '$projectId' LIMIT 1";
-    $res = mysqli_query($conn, $query);
+    $query = $collection->deleteOne([
+        '_id' => $projectObjectId
+    ]);
+
     $data = [
         "status" => true,
         "message" => "project deleted successfully",
-        "data" => $delectqry        
+        "data" => $query
     ];
     http_response_code(200);
     echo json_encode($data);
